@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI 围棋</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <h1>AI 围棋</h1>
+
+    <!-- 操作区 -->
+    <div id="controls">
+      <label>棋盘大小：
+        <select id="boardSizeSelect">
+          <option value="9" selected>9 x 9</option>
+          <option value="13">13 x 13</option>
+          <option value="19">19 x 19</option>
+        </select>
+      </label>
+      
+      <label>思考时间(秒)：
+        <select id="timeSelect">
+          <option value="2" selected>2秒</option>
+          <option value="5">5秒</option>
+          <option value="10">10秒</option>
+          <option value="30">30秒</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- 棋盘容器 + 画布 -->
+    <div id="boardContainer">
+      <canvas id="goBoard"></canvas>
+    </div>
+
+    <br>
+    <!-- “开始”按钮 -->
+    <button onclick="Main.newGame()">开始</button>
+  </div>
+	
+	<!-- 思考中提示 -->
+  <div id="thinking">AI 正在思考...</div>
+
+  <!-- 依次加载脚本 (请保证与原有的 js 文件名、顺序一致) -->
+  <script src="js/util.js"></script>
+	<script src="js/board.js"></script>
+	<script src="js/mcts_node.js"></script>
+	<script src="js/mcts_core.js"></script>  <!-- 核心逻辑 -->
+	<script src="js/mcts_strategy.js"></script>  <!-- 策略逻辑 -->
+	<script src="js/mcts.js"></script>  <!-- MCTS 总控 -->
+	<script src="js/ai_local.js"></script>
+	<script src="js/ai_cloud.js"></script>
+	<script src="js/main.js"></script>
+</body>
+</html>
