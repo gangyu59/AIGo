@@ -31,14 +31,13 @@ var MCTSStrategy = (function() {
 
     function evaluateMove(board, move, color) {
         let opponent = color === Board.BLACK ? Board.WHITE : Board.BLACK;
-        let captureBonus = 0, connectionBonus = 0, centerBonus = 0, edgePenalty = 0, libertyReduction = 0, selfLibertyBonus = 0;
+        let captureBonus = 0, connectionBonus = 0, centerBonus = 0, edgePenalty = 0, libertyBonus = 0, selfLibertyBonus = 0;
 
         let tempBoard = board.clone();
         tempBoard.playMove(color, move.row, move.col);
 
-        // **避免 AI 选择自杀点**
         let selfLiberties = tempBoard.getGroupAndLiberties(move.row, move.col).liberties;
-        if (selfLiberties === 0) return -Infinity;  // **如果落子导致自己无气，直接赋极低分**
+        if (selfLiberties === 0) return -Infinity;  // **避免 AI 选择自杀点**
 
         let beforeCapture = countStones(board, opponent);
         let afterCapture = countStones(tempBoard, opponent);
@@ -53,33 +52,46 @@ var MCTSStrategy = (function() {
 
         let opponentLibertiesBefore = sumLiberties(board, opponent);
         let opponentLibertiesAfter = sumLiberties(tempBoard, opponent);
-        libertyReduction = (opponentLibertiesBefore - opponentLibertiesAfter) * 10;
+        let libertyReduction = (opponentLibertiesBefore - opponentLibertiesAfter) * 10;
 
-        selfLibertyBonus = selfLiberties * 2;
+        selfLibertyBonus = selfLiberties * 3; // **鼓励 AI 落子到气多的地方**
 
-        let centerDist = Math.abs(move.row - board.size / 2) + Math.abs(move.col - board.size / 2);
-        centerBonus = 30 - centerDist * 1.5;
+        let boardSize = board.size;
+        let isCorner = (move.row === 0 && move.col === 0) || (move.row === 0 && move.col === boardSize - 1) ||
+                       (move.row === boardSize - 1 && move.col === 0) || (move.row === boardSize - 1 && move.col === boardSize - 1);
 
-        if (move.row === 0 || move.col === 0 || move.row === board.size - 1 || move.col === board.size - 1) {
-            edgePenalty = -15;
+        let isEdge = (move.row === 0 || move.col === 0 || move.row === boardSize - 1 || move.col === boardSize - 1) && !isCorner;
+
+        if (isCorner) {
+            edgePenalty = -20;  // **大幅降低 AI 落子到角落的可能性**
+        } else if (isEdge) {
+            edgePenalty = -10;  // **降低 AI 落子到边上的可能性**
         }
+
+        let centerDist = Math.abs(move.row - boardSize / 2) + Math.abs(move.col - boardSize / 2);
+        centerBonus = 30 - centerDist * 2; // **中心位置更受青睐**
 
         return captureBonus + connectionBonus + centerBonus + edgePenalty + libertyReduction + selfLibertyBonus;
     }
 
     function isSuicidalMove(board, move, color) {
-    let tempBoard = board.clone();
-    tempBoard.playMove(color, move.row, move.col);
-    let { liberties } = tempBoard.getGroupAndLiberties(move.row, move.col);
-    return liberties === 0;
-}
+        let tempBoard = board.clone();
+        tempBoard.playMove(color, move.row, move.col);
+        let { liberties } = tempBoard.getGroupAndLiberties(move.row, move.col);
+        return liberties === 0;
+    }
 
     function sumLiberties(board, color) {
         let sum = 0;
+        let visited = new Set();
+
         for (let r = 0; r < board.size; r++) {
             for (let c = 0; c < board.size; c++) {
-                if (board.grid[r][c] === color) {
-                    sum += board.getGroupAndLiberties(r, c).liberties;
+                let key = `${r},${c}`;
+                if (board.grid[r][c] === color && !visited.has(key)) {
+                    let { liberties, stones } = board.getGroupAndLiberties(r, c);
+                    sum += liberties;
+                    stones.forEach(s => visited.add(`${s.r},${s.c}`));
                 }
             }
         }

@@ -32,6 +32,8 @@ var Board = (function() {
                 }
             }
         }
+				// console.log(`合法落子点 (${color === Board.BLACK ? "黑" : "白"}):`, moves);
+	
         return moves;
     };
 
