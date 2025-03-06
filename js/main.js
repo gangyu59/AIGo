@@ -6,7 +6,7 @@ var Main = (function(){
   var boardSize = 9;       // 默认9x9
   var thinkingTime = 2000; // 默认2秒
   // aiMode 可选 "local" / "cloud"；这里默认本地AI
-  var aiMode = "local";  
+  var aiMode = "cloud";  
 
   function init() {
     // 页面加载后：获取Canvas、上下文
@@ -140,45 +140,48 @@ var Main = (function(){
   }
 
   function aiMove() {
-		// show thinking
-    Util.showThinking(true);
-		
-		// 让浏览器先渲染"思考中"再进行AI计算
-    setTimeout(function(){
-		
+	    // 显示 "思考中" 状态
+	    Util.showThinking(true);
+	
 	    if (aiMode === "local") {
-	      // 本地MCTS
-	      var bestMove = AI_Local.getNextMove(board, currentColor, thinkingTime);
-	      if (bestMove) {
-	        board.playMove(currentColor, bestMove.row, bestMove.col);
-	        drawBoard();
+	        // **本地 MCTS 计算 (阻塞式，直到 AI 计算完成)**
+	        var bestMove = AI_Local.getNextMove(board, currentColor, thinkingTime);
 	
-	        if (board.isGameOver()) {
-	          alertResult();
-	          return;
+	        if (bestMove) {
+	            board.playMove(currentColor, bestMove.row, bestMove.col);
+	            drawBoard();
+	
+	            if (board.isGameOver()) {
+	                alertResult();
+	                Util.showThinking(false);
+	                return;
+	            }
+	            currentColor = (currentColor === Board.BLACK) ? Board.WHITE : Board.BLACK;
 	        }
-	        currentColor = (currentColor === Board.BLACK)? Board.WHITE: Board.BLACK;
-	      }
+	
+	        // **AI 计算完成后，隐藏 "思考中"**
+	        Util.showThinking(false);
+	
 	    } else if (aiMode === "cloud") {
-	      // 云端 (随机/占位)
-	      AI_Cloud.getNextMove(board, currentColor, function(move){
-	        if (move) {
-	          board.playMove(currentColor, move.row, move.col);
-	          drawBoard();
+	        // **云端 AI 计算 (异步等待 AI 返回结果)**
+	        AI_Cloud.getNextMove(board, currentColor, function (move) {
+	            if (move) {
+	                board.playMove(currentColor, move.row, move.col);
+	                drawBoard();
 	
-	          if (board.isGameOver()) {
-	            alertResult();
-	            return;
-	          }
-	          currentColor = (currentColor === Board.BLACK)? Board.WHITE: Board.BLACK;
-	        }
-	      });
+	                if (board.isGameOver()) {
+	                    alertResult();
+	                    Util.showThinking(false);
+	                    return;
+	                }
+	                currentColor = (currentColor === Board.BLACK) ? Board.WHITE : Board.BLACK;
+	            }
+	
+	            // **AI 计算完成后，隐藏 "思考中"**
+	            Util.showThinking(false);
+	        });
 	    }
-			
-		// hide thinking
-      Util.showThinking(false);
-		}, 50);
-  }
+	}
 
   // 弹窗告知结果
   function alertResult() {
